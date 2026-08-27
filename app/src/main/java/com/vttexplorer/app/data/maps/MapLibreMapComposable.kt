@@ -71,7 +71,7 @@ fun MapLibreMapComposable(
                     }
 
                     map.addOnCameraMoveListener {
-                        val pos = map.cameraPosition.target
+                        val pos = map.cameraPosition.target ?: return@addOnCameraMoveListener
                         onCameraMove(
                             LatLng(pos.latitude, pos.longitude),
                             map.cameraPosition.zoom
