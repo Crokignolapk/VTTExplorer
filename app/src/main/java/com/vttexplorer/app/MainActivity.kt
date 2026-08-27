@@ -1,11 +1,10 @@
 package com.vttexplorer.app
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
@@ -15,15 +14,14 @@ import com.vttexplorer.app.presentation.theme.VTTExplorerTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
-            enableEdgeToEdge()
-        } catch (e: Exception) {
-            Log.e("VTTExplorer", "enableEdgeToEdge failed", e)
-        }
+        // PAS de enableEdgeToEdge() : les barres système gardent leur place
+        // → les boutons de l'app ne sont plus masqués
         setContent {
             VTTExplorerTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     VTTExplorerNavHost()
