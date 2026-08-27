@@ -55,16 +55,19 @@ fun RouteGeneratorScreen(
                 valueRange = 5f..100f,
                 steps = 18
             )
-            Row(Modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("5 km", style = MaterialTheme.typography.bodySmall)
-                Text("100 km", style = MaterialTheme.typography.bodySmall)
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "5 km", style = MaterialTheme.typography.bodySmall)
+                Text(text = "100 km", style = MaterialTheme.typography.bodySmall)
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Difficulté
             Text("Difficulté", fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Difficulty.entries.forEach { d ->
                     FilterChip(
@@ -84,11 +87,11 @@ fun RouteGeneratorScreen(
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Type
             Text("Type de parcours", fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(
                     BikeType.MTB to "VTT",
@@ -103,15 +106,15 @@ fun RouteGeneratorScreen(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Text("Préférences", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             PreferenceSlider("Chemins", prefs.favorPaths) { viewModel.updateFavorPaths(it) }
             PreferenceSlider("Pistes cyclables", prefs.favorCycleways) { viewModel.updateFavorCycleways(it) }
             PreferenceSlider("Dénivelé", prefs.elevationPreference) { viewModel.updateElevation(it) }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             CheckboxRow("Éviter les grands axes", prefs.avoidMainRoads) {
                 viewModel.toggleAvoidMainRoads(it)
@@ -123,7 +126,7 @@ fun RouteGeneratorScreen(
                 viewModel.toggleAllowHard(it)
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             Button(
                 onClick = { viewModel.generate() },
@@ -138,7 +141,7 @@ fun RouteGeneratorScreen(
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text("Génération…")
                 } else {
                     Text("GÉNÉRER LA BOUCLE", fontWeight = FontWeight.Bold)
@@ -147,16 +150,16 @@ fun RouteGeneratorScreen(
 
             // Résultat
             uiState.generatedRoute?.let { route ->
-                Spacer(Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 ResultCard(route = route, onStart = onStart, onRegenerate = { viewModel.generate() })
             }
 
             uiState.error?.let { err ->
-                Spacer(Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(err, color = MaterialTheme.colorScheme.error)
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             Text(
                 "Vérifiez toujours les conditions d'accès et la praticabilité des chemins.",
                 style = MaterialTheme.typography.bodySmall,
@@ -209,11 +212,11 @@ private fun ResultCard(
                 "${route.durationSeconds / 60} min  •  +${route.elevationGain.toInt()} m",
                 style = MaterialTheme.typography.titleMedium
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text("Chemins ${(route.pathPercentage * 100).toInt()} %  •  " +
                     "Pistes ${(route.cyclewayPercentage * 100).toInt()} %  •  " +
                     "Routes ${(route.roadPercentage * 100).toInt()} %")
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onStart, modifier = Modifier.weight(1f)) {
                     Text("Démarrer")
