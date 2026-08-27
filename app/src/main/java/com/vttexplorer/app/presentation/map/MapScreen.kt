@@ -46,62 +46,85 @@ fun MapScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Carte plein écran
-        mapProvider.MapView(
-            modifier = Modifier.fillMaxSize(),
-            center = if (uiState.followUser) uiState.location.position else null,
-            userLocation = uiState.location.position,
-            userBearing = uiState.location.bearing,
-            route = uiState.currentRoute
-        )
-
-        // Barre du haut : sous la barre de statut
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Barre titre
         TopAppBar(
-            title = {
-                Text("VTT Explorer", fontWeight = FontWeight.Bold, color = Color.White)
-            },
+            title = { Text("VTT Explorer", fontWeight = FontWeight.Bold) },
             actions = {
                 IconButton(onClick = onHistory) {
-                    Icon(Icons.Default.History, "Historique", tint = Color.White)
+                    Icon(Icons.Default.History, "Historique")
                 }
                 IconButton(onClick = onSettings) {
-                    Icon(Icons.Default.Settings, "Paramètres", tint = Color.White)
+                    Icon(Icons.Default.Settings, "Paramètres")
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Black.copy(alpha = 0.55f)
-            ),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
+                containerColor = MaterialTheme.colorScheme.primary,
+                titleContentColor = Color.White,
+                actionIconContentColor = Color.White
+            )
         )
 
-        // Bouton recentrer : au-dessus du panneau + barre de navigation système
-        FloatingActionButton(
-            onClick = { viewModel.toggleFollowUser() },
+        // Zone carte (prend tout l'espace restant)
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
-                .padding(end = 16.dp, bottom = 200.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
-            shape = CircleShape
+                .weight(1f)
+                .fillMaxWidth()
         ) {
-            Icon(
-                if (uiState.followUser) Icons.Default.MyLocation else Icons.Default.LocationSearching,
-                contentDescription = "Recentrer"
+            mapProvider.MapView(
+                modifier = Modifier.fillMaxSize(),
+                center = if (uiState.followUser) uiState.location.position else null,
+                userLocation = uiState.location.position,
+                userBearing = uiState.location.bearing,
+                route = uiState.currentRoute
             )
+
+            FloatingActionButton(
+                onClick = { viewModel.toggleFollowUser() },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = CircleShape
+            ) {
+                Icon(
+                    if (uiState.followUser) Icons.Default.MyLocation else Icons.Default.LocationSearching,
+                    contentDescription = "Recentrer"
+                )
+            }
+
+            if (!locationPermission.status.isGranted) {
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Column(Modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            if (locationPermission.status.shouldShowRationale)
+                                "La localisation est nécessaire pour le GPS VTT."
+                            else
+                                "Autorisez la localisation pour utiliser VTT Explorer."
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { locationPermission.launchPermissionRequest() }) {
+                            Text("Autoriser")
+                        }
+                    }
+                }
+            }
         }
 
-        // Panneau bas : au-dessus des boutons de navigation Android
+        // Panneau actions EN BAS — hors de la carte, au-dessus de la barre système
+        // (safeDrawingPadding sur MainActivity + Column structure = plus de masquage)
         Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             OutlinedTextField(
                 value = "",
@@ -109,125 +132,54 @@ fun MapScreen(
                 placeholder = { Text("Où souhaitez-vous aller ?") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(12.dp),
                 singleLine = true,
                 readOnly = true
             )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Button(
                     onClick = onCreateLoop,
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.DirectionsBike, null)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text("Boucle", fontWeight = FontWeight.SemiBold)
                 }
                 OutlinedButton(
                     onClick = onDestination,
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.Place, null)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text("Destination")
                 }
             }
 
             uiState.currentRoute?.let { route ->
-                Spacer(modifier = Modifier.height(12.dp))
-                RouteSummaryCard(route = route, onStart = onStartNavigation)
-            }
-        }
-
-        if (!locationPermission.status.isGranted) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(24.dp)
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-            ) {
-                PermissionBanner(
-                    rationale = locationPermission.status.shouldShowRationale,
-                    onRequest = { locationPermission.launchPermissionRequest() }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    "${"%.1f".format(route.distanceMeters / 1000)} km  •  " +
+                        "${route.durationSeconds / 60} min  •  +${route.elevationGain.toInt()} m",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
                 )
-            }
-        }
-
-        uiState.error?.let { err ->
-            Snackbar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-                action = {
-                    TextButton(onClick = { viewModel.clearError() }) { Text("OK") }
+                Spacer(modifier = Modifier.height(6.dp))
+                Button(
+                    onClick = onStartNavigation,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Démarrer la navigation")
                 }
-            ) { Text(err) }
-        }
-    }
-}
-
-@Composable
-private fun RouteSummaryCard(
-    route: com.vttexplorer.app.domain.model.Route,
-    onStart: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "${"%.1f".format(route.distanceMeters / 1000)} km  •  " +
-                    "${route.durationSeconds / 60} min  •  +${route.elevationGain.toInt()} m",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = onStart,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Démarrer la navigation")
-            }
-        }
-    }
-}
-
-@Composable
-private fun PermissionBanner(rationale: Boolean, onRequest: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = if (rationale) {
-                    "La localisation est nécessaire pour le GPS VTT."
-                } else {
-                    "Autorisez la localisation précise pour utiliser VTT Explorer."
-                },
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onRequest) {
-                Text("Autoriser")
             }
         }
     }
