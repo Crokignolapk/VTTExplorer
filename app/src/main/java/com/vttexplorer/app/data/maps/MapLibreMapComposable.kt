@@ -115,7 +115,6 @@ fun MapLibreMapComposable(
                             "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
                         ).apply {
                             setMaxZoom(20f)
-                            setAttribution("© OpenStreetMap © CARTO")
                         }
                         map.setStyle(
                             Style.Builder()
