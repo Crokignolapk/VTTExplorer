@@ -1,0 +1,85 @@
+# VTT Explorer — Build release (manuel ou tag v*)
+# Secrets optionnels pour signature :
+#   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+# Sans secrets → tente assembleRelease ; si échec de signature, l'utilisateur utilise build-apk.yml
+
+name: Build Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: Assemble Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Accept licenses & install SDK
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$GITHUB_WORKSPACE/release.keystore"
+            cat > "$GITHUB_WORKSPACE/keystore.properties" << PROP
+          storeFile=$GITHUB_WORKSPACE/release.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          PROP
+            echo "Keystore configuré."
+          else
+            echo "Pas de KEYSTORE_BASE64 — build release non signé ou debug uniquement."
+          fi
+
+      - name: local.properties
+        run: |
+          echo "sdk.dir=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > local.properties
+          if [ -n "${{ secrets.GRAPHHOPPER_API_KEY }}" ]; then
+            echo "GRAPHHOPPER_API_KEY=${{ secrets.GRAPHHOPPER_API_KEY }}" >> local.properties
+          fi
+
+      - run: chmod +x gradlew
+
+      - name: Build
+        run: |
+          if [ -f keystore.properties ]; then
+            ./gradlew assembleRelease bundleRelease \
+              -PversionCode=${{ github.run_number }} \
+              -PversionName="1.0.${{ github.run_number }}" \
+              --no-daemon --stacktrace
+          else
+            echo "Sans keystore : génération APK debug"
+            ./gradlew assembleDebug --no-daemon --stacktrace
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VTTExplorer-release
+          path: |
+            app/build/outputs/apk/**/*.apk
+            app/build/outputs/bundle/**/*.aab
+          if-no-files-found: warn
+          retention-days: 14

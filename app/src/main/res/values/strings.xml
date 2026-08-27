@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VTT Explorer</string>
+    <string name="where_to_go">Où souhaitez-vous aller ?</string>
+    <string name="create_loop">Créer une boucle</string>
+    <string name="destination">Destination</string>
+    <string name="generate_loop">GÉNÉRER LA BOUCLE</string>
+    <string name="start_navigation">Démarrer</string>
+    <string name="modify">Modifier</string>
+    <string name="regenerate">Régénérer</string>
+    <string name="distance">Distance</string>
+    <string name="difficulty">Difficulté</string>
+    <string name="easy">Facile</string>
+    <string name="intermediate">Intermédiaire</string>
+    <string name="hard">Difficile</string>
+    <string name="expert">Expert</string>
+    <string name="bike_type">Type de parcours</string>
+    <string name="mtb">VTT</string>
+    <string name="trekking">VTC</string>
+    <string name="leisure">Vélo loisir</string>
+    <string name="hiking">Randonnée</string>
+    <string name="preferences">Préférences</string>
+    <string name="avoid_main_roads">Éviter les grands axes</string>
+    <string name="avoid_paved">Éviter les routes goudronnées</string>
+    <string name="favor_paths">Favoriser les chemins</string>
+    <string name="allow_hard_sections">Autoriser les portions difficiles</string>
+    <string name="paths">Chemins</string>
+    <string name="cycleways">Pistes cyclables</string>
+    <string name="secondary_roads">Routes secondaires</string>
+    <string name="elevation">Dénivelé</string>
+    <string name="recalculating">Recalcul de l\'itinéraire…</string>
+    <string name="gps_disabled">GPS désactivé</string>
+    <string name="no_location">Position introuvable</string>
+    <string name="no_route">Aucun parcours adapté au VTT n\'a été trouvé dans cette zone.</string>
+    <string name="retry">Réessayer</string>
+    <string name="modify_preferences">Modifier les préférences</string>
+    <string name="check_access">Vérifiez les conditions d\'accès et la praticabilité du chemin avant de vous engager.</string>
+    <string name="my_rides">Mes sorties</string>
+    <string name="settings">Paramètres</string>
+    <string name="privacy_note">Les traces GPS sont stockées localement. Aucune donnée n\'est envoyée sans votre consentement explicite.</string>
+    <string name="permission_location_rationale">VTT Explorer a besoin de votre position précise pour afficher votre localisation, calculer des boucles et vous guider en navigation.</string>
+    <string name="permission_background_rationale">Pour continuer la navigation lorsque l\'écran est éteint ou l\'application en arrière-plan.</string>
+</resources>

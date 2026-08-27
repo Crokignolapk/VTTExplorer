@@ -1,0 +1,149 @@
+# Codemagic CI/CD — VTT Explorer (Android natif)
+# Docs : https://docs.codemagic.io/yaml-quick-start/building-a-native-android-app/
+# Plan free : 500 min / mois
+#
+# Workflows :
+#   1. vtt-explorer-debug   → APK debug (test rapide, sans keystore)
+#   2. vtt-explorer-release → AAB + APK signés (distribution / Play Store)
+#   3. vtt-explorer-play    → AAB signé + publication auto sur Google Play (piste internal)
+
+workflows:
+
+  # ---------------------------------------------------------------------------
+  # 1. DEBUG — installation directe sur téléphone
+  # ---------------------------------------------------------------------------
+  vtt-explorer-debug:
+    name: VTT Explorer — APK Debug
+    max_build_duration: 60
+    instance_type: linux
+    environment:
+      java: 17
+      vars:
+        PACKAGE_NAME: "com.vttexplorer.app"
+    scripts:
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          if [ -n "$GRAPHHOPPER_API_KEY" ]; then
+            echo "GRAPHHOPPER_API_KEY=$GRAPHHOPPER_API_KEY" >> "$CM_BUILD_DIR/local.properties"
+          fi
+      - name: Make gradlew executable
+        script: chmod +x ./gradlew
+      - name: Build debug APK
+        script: ./gradlew assembleDebug --no-daemon --stacktrace
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
+    publishing:
+      email:
+        recipients:
+          - $CM_CLIENT_EMAIL
+        notify:
+          success: true
+          failure: true
+
+  # ---------------------------------------------------------------------------
+  # 2. RELEASE — AAB + APK signés (à uploader manuellement sur Play Console)
+  # Prérequis Codemagic UI :
+  #   Code signing identities → Android keystores → upload keystore
+  #   Reference name : vtt_keystore
+  # ---------------------------------------------------------------------------
+  vtt-explorer-release:
+    name: VTT Explorer — Release signé
+    max_build_duration: 60
+    instance_type: linux
+    environment:
+      java: 17
+      android_signing:
+        - vtt_keystore
+      vars:
+        PACKAGE_NAME: "com.vttexplorer.app"
+      # groups:
+      #   - graphhopper   # si GRAPHHOPPER_API_KEY est dans un groupe de variables
+    scripts:
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          if [ -n "$GRAPHHOPPER_API_KEY" ]; then
+            echo "GRAPHHOPPER_API_KEY=$GRAPHHOPPER_API_KEY" >> "$CM_BUILD_DIR/local.properties"
+          fi
+      - name: Make gradlew executable
+        script: chmod +x ./gradlew
+      - name: Build release AAB + APK
+        script: |
+          # BUILD_NUMBER fourni par Codemagic (incrémental)
+          ./gradlew bundleRelease assembleRelease \
+            -PversionCode=$BUILD_NUMBER \
+            -PversionName="1.0.$BUILD_NUMBER" \
+            --no-daemon --stacktrace
+    artifacts:
+      - app/build/outputs/bundle/release/*.aab
+      - app/build/outputs/apk/release/*.apk
+      - app/build/outputs/mapping/release/mapping.txt
+    publishing:
+      email:
+        recipients:
+          - $CM_CLIENT_EMAIL
+        notify:
+          success: true
+          failure: true
+
+  # ---------------------------------------------------------------------------
+  # 3. PLAY STORE — AAB signé + publication automatique (piste internal)
+  # Prérequis :
+  #   - Même keystore (vtt_keystore)
+  #   - Compte Google Play + app créée manuellement (1ère version à la main)
+  #   - Compte de service JSON → variable GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+  #   - Groupe de variables "google_play" dans Codemagic
+  # ---------------------------------------------------------------------------
+  vtt-explorer-play:
+    name: VTT Explorer — Publier sur Google Play
+    max_build_duration: 90
+    instance_type: linux
+    environment:
+      java: 17
+      android_signing:
+        - vtt_keystore
+      groups:
+        - google_play
+      vars:
+        PACKAGE_NAME: "com.vttexplorer.app"
+    scripts:
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          if [ -n "$GRAPHHOPPER_API_KEY" ]; then
+            echo "GRAPHHOPPER_API_KEY=$GRAPHHOPPER_API_KEY" >> "$CM_BUILD_DIR/local.properties"
+          fi
+      - name: Make gradlew executable
+        script: chmod +x ./gradlew
+      - name: Build release AAB
+        script: |
+          # Incrémente le versionCode par rapport à la dernière version Play
+          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || true)
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            UPDATED_BUILD_NUMBER=${BUILD_NUMBER:-1}
+          else
+            UPDATED_BUILD_NUMBER=$((LATEST + 1))
+          fi
+          echo "versionCode=$UPDATED_BUILD_NUMBER"
+          ./gradlew bundleRelease \
+            -PversionCode=$UPDATED_BUILD_NUMBER \
+            -PversionName="1.0.$UPDATED_BUILD_NUMBER" \
+            --no-daemon --stacktrace
+    artifacts:
+      - app/build/outputs/bundle/release/*.aab
+      - app/build/outputs/mapping/release/mapping.txt
+    publishing:
+      email:
+        recipients:
+          - $CM_CLIENT_EMAIL
+        notify:
+          success: true
+          failure: true
+      google_play:
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        # Première soumission souvent en brouillon :
+        submit_as_draft: true
+        # track alternatives : alpha | beta | production
+        # changes_not_sent_for_review: false

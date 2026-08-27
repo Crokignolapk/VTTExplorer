@@ -1,0 +1,18 @@
+## Copier ce fichier en local.properties (ne jamais le committer)
+## Android Studio génère déjà sdk.dir automatiquement.
+
+sdk.dir=/Users/VOTRE_USER/Library/Android/sdk
+
+# ---------- GraphHopper Directions API ----------
+# 1. Créer un compte : https://www.graphhopper.com/
+# 2. Dashboard → API Keys → créer une clé
+# 3. Coller la clé ci-dessous (sans guillemets)
+#
+# Note : le plan free autorise car / bike / foot.
+#        Les profils mtb et racingbike nécessitent souvent un plan supérieur.
+#        Si mtb n'est pas dispo, changez le profil en "bike" dans VttCustomModelBuilder.
+
+GRAPHHOPPER_API_KEY=votre_cle_graphhopper_ici
+
+# Optionnel
+# MAPTILER_API_KEY=
