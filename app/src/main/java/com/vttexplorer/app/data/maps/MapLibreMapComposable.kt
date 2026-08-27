@@ -1,10 +1,15 @@
 package com.vttexplorer.app.data.maps
 
 import android.graphics.Color
+import android.os.Handler
+import android.os.Looper
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,14 +33,17 @@ import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.PropertyFactory
-import org.maplibre.android.style.layers.RasterLayer
 import org.maplibre.android.style.sources.GeoJsonSource
-import org.maplibre.android.style.sources.RasterSource
-import org.maplibre.android.style.sources.TileSet
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
+
+/** Styles testés sans clé API */
+private val STYLE_URLS = listOf(
+    "https://tiles.openfreemap.org/styles/liberty",
+    "https://demotiles.maplibre.org/style.json"
+)
 
 @Composable
 fun MapLibreMapComposable(
@@ -52,7 +60,12 @@ fun MapLibreMapComposable(
     var mapLibreMap by remember { mutableStateOf<MapLibreMap?>(null) }
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     var mapError by remember { mutableStateOf<String?>(null) }
-    var styleLoaded by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(true) }
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
+
+    // Dernière position / route pour l'update
+    val lastCenter = remember { mutableStateOf<LatLng?>(null) }
+    val lastRouteId = remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -82,98 +95,107 @@ fun MapLibreMapComposable(
         }
     }
 
-    if (mapError != null) {
-        Box(
-            modifier = modifier.fillMaxSize().background(ComposeColor(0xFF1B5E20)).padding(24.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Carte indisponible\n$mapError\n\nVérifiez Internet.",
-                color = ComposeColor.White,
-                fontSize = 14.sp
-            )
-        }
-        return
-    }
+    Box(modifier = modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { ctx ->
+                FrameLayout(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    try {
+                        MapLibre.getInstance(ctx.applicationContext)
+                        val mv = MapView(ctx).apply {
+                            layoutParams = FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT
+                            )
+                        }
+                        mapViewRef = mv
+                        addView(mv)
+                        mv.onCreate(null)
+                        mv.onStart()
+                        mv.onResume()
+                        mv.getMapAsync { map ->
+                            mapLibreMap = map
+                            map.uiSettings.isAttributionEnabled = true
+                            map.uiSettings.isLogoEnabled = true
+                            map.uiSettings.setCompassEnabled(true)
 
-    AndroidView(
-        factory = { ctx ->
-            try {
-                MapLibre.getInstance(ctx.applicationContext)
-                MapView(ctx).also { mv ->
-                    mapViewRef = mv
-                    mv.onCreate(null)
-                    mv.onStart()
-                    mv.onResume()
-                    mv.getMapAsync { map ->
-                        mapLibreMap = map
-                        // Style raster OSM via tuiles publiques (Carto Voyager – libre)
-                        val tileSet = TileSet(
-                            "2.2.0",
-                            "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                            "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                            "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
-                        ).apply {
-                            setMaxZoom(20f)
-                        }
-                        map.setStyle(
-                            Style.Builder()
-                                .withSource(RasterSource("carto", tileSet, 256))
-                                .withLayer(RasterLayer("carto-layer", "carto"))
-                        ) { style ->
-                            try {
-                                if (style.getSource("route-source") == null) {
-                                    style.addSource(GeoJsonSource("route-source"))
-                                    style.addLayer(
-                                        LineLayer("route-layer", "route-source").withProperties(
-                                            PropertyFactory.lineColor(Color.parseColor("#2E7D32")),
-                                            PropertyFactory.lineWidth(5f),
-                                            PropertyFactory.lineOpacity(0.95f)
-                                        )
-                                    )
+                            fun applyStyle(index: Int) {
+                                if (index >= STYLE_URLS.size) {
+                                    mainHandler.post {
+                                        loading = false
+                                        mapError = "Impossible de charger le fond de carte.\nVérifiez Internet."
+                                    }
+                                    return
                                 }
-                            } catch (_: Exception) {
+                                val url = STYLE_URLS[index]
+                                map.setStyle(url) { style ->
+                                    try {
+                                        if (style.getSource("route-source") == null) {
+                                            style.addSource(GeoJsonSource("route-source"))
+                                            style.addLayer(
+                                                LineLayer("route-layer", "route-source").withProperties(
+                                                    PropertyFactory.lineColor(Color.parseColor("#2E7D32")),
+                                                    PropertyFactory.lineWidth(6f),
+                                                    PropertyFactory.lineOpacity(0.95f)
+                                                )
+                                            )
+                                        }
+                                    } catch (_: Exception) {
+                                    }
+                                    val target = userLocation ?: center ?: LatLng(46.603354, 1.888334)
+                                    val zoom = if (userLocation != null) 13.0 else 5.5
+                                    map.cameraPosition = CameraPosition.Builder()
+                                        .target(MLLatLng(target.latitude, target.longitude))
+                                        .zoom(zoom)
+                                        .build()
+                                    mainHandler.post {
+                                        loading = false
+                                        mapError = null
+                                    }
+                                    onMapReady()
+                                }
+                                // Si le style ne charge pas en 8s, essayer le suivant
+                                mainHandler.postDelayed({
+                                    if (loading && map.style == null) {
+                                        applyStyle(index + 1)
+                                    }
+                                }, 8000)
                             }
-                            styleLoaded = true
-                            onMapReady()
+                            applyStyle(0)
+
+                            map.addOnCameraMoveListener {
+                                val pos = map.cameraPosition.target ?: return@addOnCameraMoveListener
+                                onCameraMove(LatLng(pos.latitude, pos.longitude), map.cameraPosition.zoom)
+                            }
                         }
-                        map.addOnCameraMoveListener {
-                            val pos = map.cameraPosition.target ?: return@addOnCameraMoveListener
-                            onCameraMove(LatLng(pos.latitude, pos.longitude), map.cameraPosition.zoom)
-                        }
-                        val target = userLocation ?: center ?: LatLng(46.603354, 1.888334)
-                        val zoom = if (userLocation != null) 14.0 else 5.5
-                        map.cameraPosition = CameraPosition.Builder()
-                            .target(MLLatLng(target.latitude, target.longitude))
-                            .zoom(zoom)
-                            .build()
+                    } catch (e: Exception) {
+                        mapError = e.message ?: "Erreur carte"
+                        loading = false
                     }
                 }
-            } catch (e: Exception) {
-                mapError = e.message ?: "Impossible de créer la carte"
-                android.widget.FrameLayout(ctx)
-            }
-        },
-        modifier = modifier.fillMaxSize(),
-        update = { _ ->
-            val map = mapLibreMap ?: return@AndroidView
-            if (!styleLoaded) return@AndroidView
-            try {
-                val c = userLocation ?: center
-                if (c != null) {
-                    map.easeCamera(
-                        CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.Builder()
-                                .target(MLLatLng(c.latitude, c.longitude))
-                                .zoom(14.0)
-                                .build()
-                        ),
-                        600
-                    )
-                }
-                route?.let { r ->
-                    if (r.points.isNotEmpty()) {
-                        val coords = r.points.map {
+            },
+            modifier = Modifier.fillMaxSize(),
+            update = { _ ->
+                val map = mapLibreMap ?: return@AndroidView
+                try {
+                    val c = userLocation ?: center
+                    if (c != null && c != lastCenter.value) {
+                        lastCenter.value = c
+                        map.easeCamera(
+                            CameraUpdateFactory.newLatLngZoom(
+                                MLLatLng(c.latitude, c.longitude),
+                                14.0
+                            ),
+                            700
+                        )
+                    }
+                    val routeKey = route?.points?.size?.toString() + "_" + route?.distanceMeters
+                    if (route != null && route.points.isNotEmpty() && routeKey != lastRouteId.value) {
+                        lastRouteId.value = routeKey
+                        val coords = route.points.map {
                             Point.fromLngLat(it.latLng.longitude, it.latLng.latitude)
                         }
                         map.style?.getSourceAs<GeoJsonSource>("route-source")
@@ -183,9 +205,30 @@ fun MapLibreMapComposable(
                                 )
                             )
                     }
+                } catch (_: Exception) {
                 }
-            } catch (_: Exception) {
+            }
+        )
+
+        if (loading) {
+            Box(
+                Modifier.fillMaxSize().background(ComposeColor(0xFF1B5E20).copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = ComposeColor.White)
             }
         }
-    )
+        if (mapError != null) {
+            Box(
+                Modifier.fillMaxSize().background(ComposeColor(0xFF1B5E20)).padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = mapError!!,
+                    color = ComposeColor.White,
+                    fontSize = 15.sp
+                )
+            }
+        }
+    }
 }
