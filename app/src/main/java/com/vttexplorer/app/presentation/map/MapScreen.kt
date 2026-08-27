@@ -102,17 +102,18 @@ fun MapScreen(
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
-                    Column(Modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            if (locationPermission.status.shouldShowRationale)
-                                "La localisation est nécessaire pour le GPS VTT."
-                            else
-                                "Autorisez la localisation pour utiliser VTT Explorer."
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { locationPermission.launchPermissionRequest() }) {
-                            Text("Autoriser")
-                        }
+                    Text(
+                        text = if (locationPermission.status.shouldShowRationale)
+                            "La localisation est nécessaire pour le GPS VTT."
+                        else
+                            "Autorisez la localisation pour utiliser VTT Explorer.",
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                    )
+                    Button(
+                        onClick = { locationPermission.launchPermissionRequest() },
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text("Autoriser")
                     }
                 }
             }
