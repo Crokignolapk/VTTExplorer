@@ -47,6 +47,10 @@ class MapViewModel(
         _uiState.update { it.copy(error = null) }
     }
 
+    fun onPermissionGranted() {
+        locationRepository.startLocationUpdates()
+    }
+
     fun toggleFollowUser() {
         _uiState.update { it.copy(followUser = !it.followUser) }
     }
