@@ -114,7 +114,7 @@ fun MapScreen(
                 readOnly = true // MVP : ouvre destination
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -131,7 +131,7 @@ fun MapScreen(
                     )
                 ) {
                     Icon(Icons.Default.DirectionsBike, null)
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Créer une boucle", fontWeight = FontWeight.SemiBold)
                 }
 
@@ -143,14 +143,14 @@ fun MapScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Icon(Icons.Default.Place, null)
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Destination")
                 }
             }
 
             // Affichage route si présente
             uiState.currentRoute?.let { route ->
-                Spacer(Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 RouteSummaryCard(route = route, onStart = onStartNavigation)
             }
         }
@@ -184,16 +184,20 @@ private fun RouteSummaryCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
     ) {
-        Column(Modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
             Text(
-                "${"%.1f".format(route.distanceMeters / 1000)} km  •  " +
-                        "${route.durationSeconds / 60} min  •  +${route.elevationGain.toInt()} m",
+                text = "${"%.1f".format(route.distanceMeters / 1000)} km  •  " +
+                    "${route.durationSeconds / 60} min  •  +${route.elevationGain.toInt()} m",
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = onStart,
                 modifier = Modifier.fillMaxWidth()
@@ -210,16 +214,25 @@ private fun PermissionBanner(rationale: Boolean, onRequest: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
     ) {
-        Column(Modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
             Text(
-                if (rationale) "La localisation est nécessaire pour le GPS VTT."
-                else "Autorisez la localisation précise pour utiliser VTT Explorer.",
+                text = if (rationale) {
+                    "La localisation est nécessaire pour le GPS VTT."
+                } else {
+                    "Autorisez la localisation précise pour utiliser VTT Explorer."
+                },
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
-            Spacer(Modifier.height(8.dp))
-            Button(onClick = onRequest) { Text("Autoriser") }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = onRequest) {
+                Text("Autoriser")
+            }
         }
     }
 }
