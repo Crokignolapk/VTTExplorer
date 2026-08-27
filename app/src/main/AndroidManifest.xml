@@ -25,7 +25,7 @@
 
     <uses-feature
         android:name="android.hardware.location.gps"
-        android:required="true" />
+        android:required="false" />
 
     <application
         android:name=".VTTExplorerApp"
