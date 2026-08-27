@@ -54,7 +54,7 @@ fun NavigationScreen(
                     tint = Color.White,
                     modifier = Modifier.size(36.dp)
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
                         "Dans ${uiState.distanceToNext.toInt()} m",
@@ -91,14 +91,14 @@ fun NavigationScreen(
                 StatItem("Parcouru", "${"%.1f".format(uiState.distanceTraveled / 1000)} km")
                 StatItem("D+", "+${uiState.elevationGain.toInt()} m")
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onStop,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
                 Icon(Icons.Default.Close, null)
-                Spacer(Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text("Arrêter la navigation")
             }
         }
