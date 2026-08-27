@@ -8,7 +8,7 @@ import com.vttexplorer.app.data.maps.MapProvider
 import com.vttexplorer.app.data.maps.MapLibreProvider
 import com.vttexplorer.app.data.repository.RideRepositoryImpl
 import com.vttexplorer.app.data.routing.GraphHopperRoutingEngine
-import com.vttexplorer.app.data.routing.RoutingEngine
+import com.vttexplorer.app.domain.repository.RoutingEngine
 import com.vttexplorer.app.domain.repository.LocationRepository
 import com.vttexplorer.app.domain.repository.RideRepository
 import com.vttexplorer.app.domain.usecase.GenerateLoopUseCase
