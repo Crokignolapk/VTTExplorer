@@ -43,16 +43,16 @@ fun SettingsScreen(
             SwitchRow("Voix de navigation", state.voiceEnabled) { viewModel.setVoice(it) }
             SwitchRow("Recalcul automatique", state.autoRecalc) { viewModel.setAutoRecalc(it) }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Text("Carte", style = MaterialTheme.typography.titleMedium)
             SwitchRow("Thème sombre carte", state.darkMap) { viewModel.setDarkMap(it) }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Text("Itinéraire VTT", style = MaterialTheme.typography.titleMedium)
             SwitchRow("Éviter grands axes", state.avoidMainRoads) { viewModel.setAvoidMain(it) }
             SwitchRow("Éviter routes goudronnées", state.avoidPaved) { viewModel.setAvoidPaved(it) }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             Text(
                 "Les traces GPS sont stockées localement. " +
                         "VTT Explorer ne collecte aucune donnée personnelle sans votre consentement.",
